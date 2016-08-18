@@ -6,62 +6,41 @@
 -export([init/1]).
 
 start_link(Name, Port, ListenerOpts, TransportOpts) ->
-    supervisor:start_link({local, make_name(Name)}, ?MODULE, [Name, Port, ListenerOpts, TransportOpts]).
+    supervisor:start_link({local, make_name(Name)}, ?MODULE,
+			  [Name, Port, ListenerOpts, TransportOpts]).
 
 init([Name, Port, ListenerOpts, TransportOpts]) ->
 
     Transport = proplists:get_value(transport, ListenerOpts),
     {ok, ListeningSock} = Transport:listen(Port, TransportOpts),
 
-    PoolType = proplists:get_value(pool_type, ListenerOpts),
+    AcceptorChild =
+	case proplists:get_value(acceptor, ListenerOpts) of
+	    supervisor ->
+		{{tecipe_acceptor_sup, Name},
+		 {tecipe_acceptor_sup, start_link, [Name, ListeningSock, ListenerOpts]},
+		 permanent,
+		 3000,
+		 supervisor,
+		 [tecipe_acceptor_sup]};
+	    worker ->
+		{{tecipe_acceptor_worker, Name},
+		 {tecipe_acceptor_worker, start_link, [Name, ListeningSock, ListenerOpts]},
+		 permanent,
+		 3000,
+		 worker,
+		 [tecipe_acceptor_worker]}
+	end,
 
-    case PoolType of
+    AcceptorManagerChild = {tecipe_acceptor_manager,
+			    {tecipe_acceptor_manager, start_link, []},
+			    permanent,
+			    3000,
+			    worker,
+			    [tecipe_acceptor_manager]},
 
-	acceptor ->
-
-	    AcceptorManager = {
-	      tecipe_acceptor_manager,
-	      {tecipe_acceptor_manager, start_link, []},
-	      permanent,
-	      3000,
-	      worker,
-	      [tecipe_acceptor_manager]},
-
-	    Acceptor = {
-	      {tecipe_acceptor, Name},
-	      {tecipe_acceptor, start_link, [Name, ListeningSock, ListenerOpts]},
-	      permanent,
-	      3000,
-	      supervisor,
-	      [tecipe_acceptor]},
-
-	    {ok, {{one_for_one, 10, 1}, [AcceptorManager, Acceptor]}};
-
-	worker ->
-
-
-	    WorkerManager = {
-	      tecipe_worker_manager,
-	      {tecipe_worker_manager, start_link, []},
-	      permanent,
-	      3000,
-	      worker,
-	      [tecipe_worker_manager]},
-
-	    Worker = {
-	      {tecipe_worker, Name},
-	      {tecipe_worker, start_link, [Name, ListeningSock, ListenerOpts]},
-	      permanent,
-	      3000,
-	      worker,
-	      [tecipe_worker]},
-
-	    {ok, {{one_for_one, 10, 1}, [WorkerManager, Worker]}}
-
-    end.
+    {ok, {{one_for_one, 10, 1}, [AcceptorManagerChild, AcceptorChild]}}.
 
 make_name(Name)
   when is_atom(Name) ->
-    list_to_atom("tecipe_"
-		 ++ atom_to_list(Name)
-		 ++ "_listener").
+    list_to_atom("tecipe_listener_" ++ atom_to_list(Name)).

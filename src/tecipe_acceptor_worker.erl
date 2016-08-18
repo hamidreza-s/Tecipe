@@ -1,4 +1,4 @@
--module(tecipe_worker).
+-module(tecipe_acceptor_worker).
 -behaviour(gen_server).
 
 -export([start_link/3]).
@@ -6,25 +6,36 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--record(state, {}).
+-record(state, {name, transport, listening_sock}).
 
 start_link(Name, ListeningSock, ListenerOpts) ->
-    PoolCount = proplists:get_value(pool_count, ListenerOpts),
+    Pool = proplists:get_value(pool, ListenerOpts),
     Transport = proplists:get_value(transport, ListenerOpts),
-    gen_server:start_link(?MODULE, [Name, ListeningSock, ListenerOpts], []).
+    {ok, AcceptorWorker} = gen_server:start_link(?MODULE, [Name, Transport, ListeningSock], []),
+    [{ok, _} = add_worker(AcceptorWorker) || _ <- lists:seq(1, Pool)],
+    {ok, AcceptorWorker}.
 
-add_worker(WorkerSup, Transport, ListeningSock) ->
-    Pid = spawn_link(fun() -> worker_loop(WorkerSup, Transport, ListeningSock) end),
-    {ok, Pid}.
 
-worker_loop(WorkerSup, Transport, ListeningSock) ->
+add_worker(AcceptorWorker) ->
+    gen_server:call(AcceptorWorker, add_worker).
+
+worker_loop(AcceptorWorker, Transport, ListeningSock) ->
     {ok, Sock} = Transport:accept(ListeningSock),
-    add_worker(WorkerSup, Transport, ListeningSock),
+    {ok, _} = add_worker(AcceptorWorker),
+    unlink(AcceptorWorker),
     handle(Transport, Sock).
 
-init([_Name, _ListeningSock, _ListeningOpts]) ->
+init([Name, Transport, ListeningSock]) ->
     process_flag(trap_exit, true),
-    {ok, #state{}}.
+    {ok, #state{name = Name, transport = Transport, listening_sock = ListeningSock}}.
+
+handle_call(add_worker, _From, State) ->
+    AcceptorWorker = self(),
+    Transport = State#state.transport,
+    ListeningSock = State#state.listening_sock,
+    Pid = spawn_link(fun() -> worker_loop(AcceptorWorker, Transport, ListeningSock) end),
+    Reply = {ok, Pid},
+    {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,

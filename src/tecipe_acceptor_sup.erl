@@ -1,4 +1,4 @@
--module(tecipe_acceptor).
+-module(tecipe_acceptor_sup).
 -behaviour(supervisor).
 
 -export([start_link/3, start_acceptor/2]).
@@ -6,23 +6,22 @@
 -export([init/1]).
 
 start_link(Name, ListeningSock, ListenerOpts) ->
-    PoolCount = proplists:get_value(pool_count, ListenerOpts),
+    Pool = proplists:get_value(pool, ListenerOpts),
     Transport = proplists:get_value(transport, ListenerOpts),
     {ok, AcceptorSup} = supervisor:start_link(?MODULE, [Name, Transport, ListeningSock]),
-    [{ok, _} = add_acceptor(AcceptorSup) || _ <- lists:seq(1, PoolCount)],
+    [{ok, _} = add_acceptor(AcceptorSup) || _ <- lists:seq(1, Pool)],
     {ok, AcceptorSup}.
 
 add_acceptor(Pid) ->
     supervisor:start_child(Pid, []).
 
 init([Name, Transport, ListeningSock]) ->
-    Acceptor = {
-      {tecipe_acceptor_loop, Name},
-      {?MODULE, start_acceptor, [Transport, ListeningSock]},
-      permanent,
-      3000,
-      worker,
-      [?MODULE]},
+    Acceptor = {{tecipe_acceptor_loop, Name},
+		{?MODULE, start_acceptor, [Transport, ListeningSock]},
+		permanent,
+		3000,
+		worker,
+		[?MODULE]},
 
     {ok, {{simple_one_for_one, 10, 1}, [Acceptor]}}.
 
