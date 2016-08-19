@@ -1,0 +1,8 @@
+[{<<"sync">>,
+  {git,"https://github.com/rustyio/sync.git",
+       {ref,"11df81d196eaab2d84caa3fbe8def5d476ef79d8"}},
+  1},
+ {<<"tecipe">>,
+  {git,"https://github.com/bisphone/tecipe.git",
+       {ref,"147a1d2ee9c290374d093d8914f2231df876bb76"}},
+  0}].
