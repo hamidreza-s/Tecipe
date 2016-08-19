@@ -1,13 +1,19 @@
 -module(tecipe).
 
--export([start/0, start_listener/2, start_listener/3, start_listener/4]).
+-export([start/0, start_listener/3, start_listener/4, start_listener/5]).
 
--type tecipe_listener_opts() :: list(tecipe_listener_opt()).
+
+-type tecipe_listener_name() :: atom().
+
+-type tecipe_listener_port() :: integer().
+
+-type tecipe_listener_handler() :: {module(), atom(), list()}.
 
 -type tecipe_listener_transport() :: tecipe_tcp | tecipe_ssl.
 
--type tecipe_listener_opt() :: {name, atom()} | {port, integer()} |
-			       {transport, tecipe_listener_transport()} |
+-type tecipe_listener_opts() :: list(tecipe_listener_opt()).
+
+-type tecipe_listener_opt() :: {transport, tecipe_listener_transport()} |
 			       {acceptor, worker | supervisor} | {pool, integer()}.
 
 -type tecipe_transport_opts() :: gen_tcp:option() | ssl:options() | sctp:option().
@@ -15,17 +21,28 @@
 start() ->
     application:start(?MODULE).
 
--spec start_listener(atom(), integer()) -> {ok, pid()}.
-start_listener(Name, Port) ->
-    start_listener(Name, Port, [], []).
+-spec start_listener(tecipe_listener_name(),
+		     tecipe_listener_port(),
+		     tecipe_listener_handler()) -> {ok, pid()}.
 
--spec start_listener(atom(), integer(), tecipe_listener_opts()) -> {ok, pid()}.
-start_listener(Name, Port, ListenerOpts) ->
-    start_listener(Name, Port, ListenerOpts, []).
+start_listener(Name, Port, Handler) ->
+    start_listener(Name, Port, Handler, [], []).
 
--spec start_listener(atom(), integer(), tecipe_listener_opts(), tecipe_transport_opts()) ->
-			    {ok, pid()}.
-start_listener(Name, Port, ListenerOpts, TransportOpts) ->
+-spec start_listener(tecipe_listener_name(),
+		     tecipe_listener_port(),
+		     tecipe_listener_handler(),
+		     tecipe_listener_opts()) -> {ok, pid()}.
+
+start_listener(Name, Port, Handler, ListenerOpts) ->
+    start_listener(Name, Port, Handler, ListenerOpts, []).
+
+-spec start_listener(tecipe_listener_name(),
+		     tecipe_listener_port(),
+		     tecipe_listener_handler(),
+		     tecipe_listener_opts(),
+		     tecipe_transport_opts()) -> {ok, pid()}.
+
+start_listener(Name, Port, Handler, ListenerOpts, TransportOpts) ->
     Acceptor = proplists:get_value(acceptor, ListenerOpts, default_listener_acceptor()),
     Pool = proplists:get_value(pool, ListenerOpts, default_listener_pool_count()),
     Transport = proplists:get_value(transport, ListenerOpts, default_listener_transport()),
@@ -33,7 +50,7 @@ start_listener(Name, Port, ListenerOpts, TransportOpts) ->
 
     ListenerSup = {{tecipe_listener_sup, Name},
 		   {tecipe_listener_sup, start_link,
-		    [Name, Port, NewListenerOpts, TransportOpts]},
+		    [Name, Port, Handler, NewListenerOpts, TransportOpts]},
 		   permanent,
 		   3000,
 		   supervisor,

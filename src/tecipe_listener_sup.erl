@@ -1,15 +1,15 @@
 -module(tecipe_listener_sup).
 -behaviour(supervisor).
 
--export([start_link/4]).
+-export([start_link/5]).
 
 -export([init/1]).
 
-start_link(Name, Port, ListenerOpts, TransportOpts) ->
+start_link(Name, Port, Handler, ListenerOpts, TransportOpts) ->
     supervisor:start_link({local, make_name(Name)}, ?MODULE,
-			  [Name, Port, ListenerOpts, TransportOpts]).
+			  [Name, Port, Handler, ListenerOpts, TransportOpts]).
 
-init([Name, Port, ListenerOpts, TransportOpts]) ->
+init([Name, Port, Handler, ListenerOpts, TransportOpts]) ->
 
     Transport = proplists:get_value(transport, ListenerOpts),
     {ok, ListeningSock} = Transport:listen(Port, TransportOpts),
@@ -18,14 +18,16 @@ init([Name, Port, ListenerOpts, TransportOpts]) ->
 	case proplists:get_value(acceptor, ListenerOpts) of
 	    supervisor ->
 		{{tecipe_acceptor_sup, Name},
-		 {tecipe_acceptor_sup, start_link, [Name, ListeningSock, ListenerOpts]},
+		 {tecipe_acceptor_sup, start_link,
+		  [Name, Handler, ListeningSock, ListenerOpts]},
 		 permanent,
 		 3000,
 		 supervisor,
 		 [tecipe_acceptor_sup]};
 	    worker ->
 		{{tecipe_acceptor_worker, Name},
-		 {tecipe_acceptor_worker, start_link, [Name, ListeningSock, ListenerOpts]},
+		 {tecipe_acceptor_worker, start_link,
+		  [Name, Handler, ListeningSock, ListenerOpts]},
 		 permanent,
 		 3000,
 		 worker,
