@@ -30,8 +30,15 @@ start_acceptor(Handler, Transport, ListeningSock) ->
     Pid = spawn_link(fun() -> acceptor_loop(Handler, Transport, ListeningSock) end),
     {ok, Pid}.
 
-acceptor_loop({Module, Function, Args} = Handler, Transport, ListeningSock) ->
+acceptor_loop(Handler, Transport, ListeningSock) ->
     {ok, Sock} = Transport:accept(ListeningSock),
-    Pid = spawn(fun() -> Module:Function(Transport, Sock, Args) end),
+
+    Pid = case Handler of
+	      {Module, Function, Args} ->
+		  spawn(Module, Function, [Transport, Sock, Args]);
+	      Function ->
+		  spawn(fun() -> Function(Transport, Sock) end)
+	  end,
+
     gen_tcp:controlling_process(Sock, Pid),
     acceptor_loop(Handler, Transport, ListeningSock).

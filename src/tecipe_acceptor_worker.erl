@@ -20,12 +20,17 @@ start_link(Name, Handler, ListeningSock, ListenerOpts) ->
 add_worker(AcceptorWorker) ->
     gen_server:call(AcceptorWorker, add_worker).
 
-worker_loop(AcceptorWorker, {Module, Function, Args} = _Handler, Transport, ListeningSock) ->
+worker_loop(AcceptorWorker, Handler, Transport, ListeningSock) ->
     {ok, Sock} = Transport:accept(ListeningSock),
     {ok, _} = add_worker(AcceptorWorker),
     unlink(AcceptorWorker),
-    Module:Function(Transport, Sock, Args).
 
+    case Handler of
+	{Module, Function, Args} ->
+	    apply(Module, Function, [Transport, Sock, Args]);
+	Function ->
+	    apply(Function, [Transport, Sock])
+    end.
 
 init([Name, Handler, Transport, ListeningSock]) ->
     process_flag(trap_exit, true),

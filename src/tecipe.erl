@@ -7,7 +7,13 @@
 
 -type tecipe_listener_port() :: integer().
 
--type tecipe_listener_handler() :: {module(), atom(), list()}.
+-type tecipe_listener_handler_mfa() :: {module(), atom(), list()}.
+
+-type tecipe_listener_handler_fun() :: fun((tecipe_listener_transport(),
+					    inet:socket()) -> no_return()).
+
+-type tecipe_listener_handler() :: tecipe_listener_handler_mfa() |
+				   tecipe_listener_handler_fun().
 
 -type tecipe_listener_transport() :: tecipe_tcp | tecipe_ssl.
 

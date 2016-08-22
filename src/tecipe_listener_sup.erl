@@ -34,8 +34,8 @@ init([Name, Port, Handler, ListenerOpts, TransportOpts]) ->
 		 [tecipe_acceptor_worker]}
 	end,
 
-    AcceptorManagerChild = {tecipe_acceptor_manager,
-			    {tecipe_acceptor_manager, start_link, []},
+    AcceptorManagerChild = {{tecipe_acceptor_manager, Name},
+			    {tecipe_acceptor_manager, start_link, [Name]},
 			    permanent,
 			    3000,
 			    worker,
