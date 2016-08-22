@@ -16,32 +16,32 @@ init([Name, Port, Handler, ListenerOpts, TransportOpts]) ->
 
     AcceptorChild =
 	case proplists:get_value(acceptor, ListenerOpts) of
-	    supervisor ->
-		{{tecipe_acceptor_sup, Name},
-		 {tecipe_acceptor_sup, start_link,
+	    static ->
+		{{tecipe_acceptor_static, Name},
+		 {tecipe_acceptor_static, start_link,
 		  [Name, Handler, ListeningSock, ListenerOpts]},
 		 permanent,
 		 3000,
 		 supervisor,
-		 [tecipe_acceptor_sup]};
-	    worker ->
-		{{tecipe_acceptor_worker, Name},
-		 {tecipe_acceptor_worker, start_link,
+		 [tecipe_acceptor_static]};
+	    dynamic ->
+		{{tecipe_acceptor_dynamic, Name},
+		 {tecipe_acceptor_dynamic, start_link,
 		  [Name, Handler, ListeningSock, ListenerOpts]},
 		 permanent,
 		 3000,
 		 worker,
-		 [tecipe_acceptor_worker]}
+		 [tecipe_acceptor_dynamic]}
 	end,
 
-    AcceptorManagerChild = {{tecipe_acceptor_manager, Name},
-			    {tecipe_acceptor_manager, start_link, [Name]},
-			    permanent,
-			    3000,
-			    worker,
-			    [tecipe_acceptor_manager]},
+    CollectorChild = {{tecipe_collector, Name},
+		      {tecipe_collector, start_link, [Name]},
+		      permanent,
+		      3000,
+		      worker,
+		      [tecipe_collector]},
 
-    {ok, {{one_for_one, 10, 1}, [AcceptorManagerChild, AcceptorChild]}}.
+    {ok, {{one_for_one, 10, 1}, [CollectorChild, AcceptorChild]}}.
 
 make_name(Name)
   when is_atom(Name) ->

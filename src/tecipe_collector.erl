@@ -1,4 +1,4 @@
--module(tecipe_acceptor_manager).
+-module(tecipe_collector).
 -behaviour(gen_server).
 
 -export([start_link/1]).
@@ -8,8 +8,8 @@
 
 -record(state, {}).
 
-start_link(_Name) ->
-    gen_server:start_link(?MODULE, [], []).
+start_link(Name) ->
+    gen_server:start_link({local, make_name(Name)}, ?MODULE, [], []).
 
 init([]) ->
     {ok, #state{}}.
@@ -29,3 +29,7 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+make_name(Name)
+  when is_atom(Name) ->
+    list_to_atom("tecipe_collector_" ++ atom_to_list(Name)).

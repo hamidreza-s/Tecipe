@@ -20,7 +20,7 @@
 -type tecipe_listener_opts() :: list(tecipe_listener_opt()).
 
 -type tecipe_listener_opt() :: {transport, tecipe_listener_transport()} |
-			       {acceptor, worker | supervisor} | {pool, integer()}.
+			       {acceptor, static | dynamic} | {pool, integer()}.
 
 -type tecipe_transport_opts() :: gen_tcp:option() | ssl:options() | sctp:option().
 
@@ -65,7 +65,7 @@ start_listener(Name, Port, Handler, ListenerOpts, TransportOpts) ->
     supervisor:start_child(tecipe_sup, ListenerSup).
 
 default_listener_acceptor() ->
-    supervisor.
+    static.
 
 default_listener_pool_count() ->
     5.

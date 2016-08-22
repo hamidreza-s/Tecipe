@@ -1,4 +1,4 @@
--module(tecipe_acceptor_sup).
+-module(tecipe_acceptor_static).
 -behaviour(supervisor).
 
 -export([start_link/4, start_acceptor/3]).
@@ -8,7 +8,7 @@
 start_link(Name, Handler, ListeningSock, ListenerOpts) ->
     Pool = proplists:get_value(pool, ListenerOpts),
     Transport = proplists:get_value(transport, ListenerOpts),
-    {ok, AcceptorSup} = supervisor:start_link(?MODULE,
+    {ok, AcceptorSup} = supervisor:start_link({local, make_name(Name)}, ?MODULE,
 					      [Name, Handler, Transport, ListeningSock]),
     [{ok, _} = add_acceptor(AcceptorSup) || _ <- lists:seq(1, Pool)],
     {ok, AcceptorSup}.
@@ -42,3 +42,7 @@ acceptor_loop(Handler, Transport, ListeningSock) ->
 
     gen_tcp:controlling_process(Sock, Pid),
     acceptor_loop(Handler, Transport, ListeningSock).
+
+make_name(Name)
+  when is_atom(Name) ->
+    list_to_atom("tecipe_acceptor_" ++ atom_to_list(Name)).
