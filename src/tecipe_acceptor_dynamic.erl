@@ -8,12 +8,12 @@
 
 -record(state, {name, handler, transport, listening_sock}).
 
-start_link(Name, Handler, ListeningSock, ListenerOpts) ->
+start_link(SName, Handler, ListeningSock, ListenerOpts) ->
     Pool = proplists:get_value(pool, ListenerOpts),
     Transport = proplists:get_value(transport, ListenerOpts),
-    {ok, AcceptorName} = tecipe:make_acceptor_name(Name),
-    {ok, AcceptorWorker} = gen_server:start_link({local, AcceptorName}, ?MODULE,
-						 [Name, Handler, Transport, ListeningSock], []),
+    {ok, LName} = tecipe:make_acceptor_lname(SName),
+    {ok, AcceptorWorker} = gen_server:start_link({local, LName}, ?MODULE,
+						 [SName, Handler, Transport, ListeningSock], []),
     [ok = add_worker(AcceptorWorker) || _ <- lists:seq(1, Pool)],
     {ok, AcceptorWorker}.
 
@@ -33,9 +33,9 @@ worker_loop(AcceptorWorker, Handler, Transport, ListeningSock) ->
 	    apply(Function, [Transport, Sock])
     end.
 
-init([Name, Handler, Transport, ListeningSock]) ->
+init([SName, Handler, Transport, ListeningSock]) ->
     process_flag(trap_exit, true),
-    {ok, #state{name = Name, handler = Handler,
+    {ok, #state{name = SName, handler = Handler,
 		transport = Transport, listening_sock = ListeningSock}}.
 
 handle_call(_Request, _From, State) ->

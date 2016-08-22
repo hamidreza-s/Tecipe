@@ -5,20 +5,20 @@
 
 -export([init/1]).
 
-start_link(Name, Handler, ListeningSock, ListenerOpts) ->
+start_link(SName, Handler, ListeningSock, ListenerOpts) ->
     Pool = proplists:get_value(pool, ListenerOpts),
     Transport = proplists:get_value(transport, ListenerOpts),
-    {ok, AcceptorName} = tecipe:make_acceptor_name(Name),
-    {ok, AcceptorSup} = supervisor:start_link({local, AcceptorName}, ?MODULE,
-					      [Name, Handler, Transport, ListeningSock]),
+    {ok, LName} = tecipe:make_acceptor_lname(SName),
+    {ok, AcceptorSup} = supervisor:start_link({local, LName}, ?MODULE,
+					      [SName, Handler, Transport, ListeningSock]),
     [{ok, _} = add_acceptor(AcceptorSup) || _ <- lists:seq(1, Pool)],
     {ok, AcceptorSup}.
 
 add_acceptor(Pid) ->
     supervisor:start_child(Pid, []).
 
-init([Name, Handler, Transport, ListeningSock]) ->
-    Acceptor = {{tecipe_acceptor_loop, Name},
+init([SName, Handler, Transport, ListeningSock]) ->
+    Acceptor = {{tecipe_acceptor_loop, SName},
 		{?MODULE, start_acceptor, [Handler, Transport, ListeningSock]},
 		permanent,
 		3000,

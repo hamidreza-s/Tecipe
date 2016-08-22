@@ -8,9 +8,9 @@
 
 -record(state, {}).
 
-start_link(Name) ->
-    {ok, CollectorName} = tecipe:make_collector_name(Name),
-    gen_server:start_link({local, CollectorName}, ?MODULE, [], []).
+start_link(SName) ->
+    {ok, LName} = tecipe:make_collector_lname(SName),
+    gen_server:start_link({local, LName}, ?MODULE, [], []).
 
 init([]) ->
     {ok, #state{}}.
