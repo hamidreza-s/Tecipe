@@ -6,7 +6,8 @@
 -export([init/1]).
 
 start_link(Name, Port, Handler, ListenerOpts, TransportOpts) ->
-    supervisor:start_link({local, make_name(Name)}, ?MODULE,
+    {ok, ListenerName} = tecipe:make_listener_name(Name),
+    supervisor:start_link({local, ListenerName}, ?MODULE,
 			  [Name, Port, Handler, ListenerOpts, TransportOpts]).
 
 init([Name, Port, Handler, ListenerOpts, TransportOpts]) ->
@@ -42,7 +43,3 @@ init([Name, Port, Handler, ListenerOpts, TransportOpts]) ->
 		      [tecipe_collector]},
 
     {ok, {{one_for_one, 10, 1}, [CollectorChild, AcceptorChild]}}.
-
-make_name(Name)
-  when is_atom(Name) ->
-    list_to_atom("tecipe_listener_" ++ atom_to_list(Name)).

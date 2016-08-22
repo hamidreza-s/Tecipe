@@ -11,7 +11,8 @@
 start_link(Name, Handler, ListeningSock, ListenerOpts) ->
     Pool = proplists:get_value(pool, ListenerOpts),
     Transport = proplists:get_value(transport, ListenerOpts),
-    {ok, AcceptorWorker} = gen_server:start_link({local, make_name(Name)}, ?MODULE,
+    {ok, AcceptorName} = tecipe:make_acceptor_name(Name),
+    {ok, AcceptorWorker} = gen_server:start_link({local, AcceptorName}, ?MODULE,
 						 [Name, Handler, Transport, ListeningSock], []),
     [ok = add_worker(AcceptorWorker) || _ <- lists:seq(1, Pool)],
     {ok, AcceptorWorker}.
@@ -65,7 +66,3 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-
-make_name(Name)
-  when is_atom(Name) ->
-    list_to_atom("tecipe_acceptor_" ++ atom_to_list(Name)).
