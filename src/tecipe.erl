@@ -1,39 +1,10 @@
 -module(tecipe).
 
 -export([start/0, start_listener/3, start_listener/4, start_listener/5,
-	 make_listener_lname/1, make_acceptor_lname/1, make_collector_lname/1,
-	 stop_listener/1]).
+	 make_listener_lname/1, make_acceptor_lname/1, make_monitor_lname/1,
+	 get_listener/1, stop_listener/1]).
 
 -include("tecipe.hrl").
-
--type tecipe_listener_sname() :: atom().
-
--type tecipe_listener_lname() :: atom().
-
--type tecipe_listener_port() :: integer().
-
--type tecipe_listener_handler_mfa() :: {module(), atom(), list()}.
-
--type tecipe_listener_handler_fun() :: fun((tecipe_listener_transport(),
-					    inet:socket()) -> no_return()).
-
--type tecipe_listener_handler() :: tecipe_listener_handler_mfa() |
-				   tecipe_listener_handler_fun().
-
--type tecipe_listener_transport() :: tecipe_tcp | tecipe_ssl.
-
--type tecipe_listener_opts() :: list(tecipe_listener_opt()).
-
--type tecipe_listener_opt() :: {transport, tecipe_listener_transport()} |
-			       {acceptor, static | dynamic} | {pool, integer()}.
-
--type tecipe_transport_opts() :: gen_tcp:option() | ssl:options() | sctp:option().
-
--type tecipe_listener_pid() :: pid().
-
--type tecipe_listener_lnames() :: {tecipe_listener_lname(),
-				   tecipe_listener_lname(),
-				   tecipe_listener_lname()}.
 
 start() ->
     application:start(?MODULE).
@@ -82,7 +53,7 @@ start_listener(SName, Port, Handler, ListenerOpts, TransportOpts) ->
     {ok, ListenerPID} = supervisor:start_child(tecipe_sup, ListenerSup),
     {ok, ListenerLName} = make_listener_lname(SName),
     {ok, AcceptorLName} = make_acceptor_lname(SName),
-    {ok, CollectorLName} = make_collector_lname(SName),
+    {ok, MonitorLName} = make_monitor_lname(SName),
 
     true = ets:insert(?LISTENER_TAB, {SName,
 				      #tecipe_listener{name = SName,
@@ -90,14 +61,24 @@ start_listener(SName, Port, Handler, ListenerOpts, TransportOpts) ->
 						       listener_pid = ListenerPID,
 						       acceptor_name = AcceptorLName,
 						       acceptor_pid = whereis(AcceptorLName),
-						       collector_name = CollectorLName,
-						       collector_pid = whereis(CollectorLName),
+						       monitor_name = MonitorLName,
+						       monitor_pid = whereis(MonitorLName),
 						       acceptor_type = Acceptor,
 						       acceptor_pool = Pool,
 						       transport = Transport,
 						       handler = Handler}}),
 
-    {ok, ListenerPID, {ListenerLName, AcceptorLName, CollectorLName}}.
+    {ok, ListenerPID}.
+
+-spec get_listener(tecipe_listener_sname()) -> {ok, tecipe_listener()} | {error, not_found}.
+get_listener(SName) ->
+    case ets:lookup(?LISTENER_TAB, SName) of
+	[{SName, Listener}] ->
+	    {ok, Listener};
+	_ ->
+	    {error, not_found}
+    end.
+
 
 -spec stop_listener(tecipe_listener_sname()) -> ok.
 stop_listener(SName) ->
@@ -113,10 +94,10 @@ make_acceptor_lname(SName)
   when is_atom(SName) ->
     {ok, list_to_atom("tecipe_acceptor_" ++ atom_to_list(SName))}.
 
--spec make_collector_lname(atom()) -> {ok, atom()}.
-make_collector_lname(SName)
+-spec make_monitor_lname(atom()) -> {ok, atom()}.
+make_monitor_lname(SName)
   when is_atom(SName) ->
-    {ok, list_to_atom("tecipe_collector_" ++ atom_to_list(SName))}.
+    {ok, list_to_atom("tecipe_monitor_" ++ atom_to_list(SName))}.
 
 default_listener_acceptor() ->
     static.

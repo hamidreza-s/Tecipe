@@ -35,11 +35,11 @@ init([SName, Port, Handler, ListenerOpts, TransportOpts]) ->
 		 [tecipe_acceptor_dynamic]}
 	end,
 
-    CollectorChild = {{tecipe_collector, SName},
-		      {tecipe_collector, start_link, [SName]},
-		      permanent,
-		      3000,
-		      worker,
-		      [tecipe_collector]},
+    MonitorChild = {{tecipe_monitor, SName},
+		    {tecipe_monitor, start_link, [SName]},
+		    permanent,
+		    3000,
+		    worker,
+		    [tecipe_monitor]},
 
-    {ok, {{one_for_all, 10, 1}, [CollectorChild, AcceptorChild]}}.
+    {ok, {{one_for_all, 10, 1}, [MonitorChild, AcceptorChild]}}.

@@ -1,4 +1,4 @@
--module(tecipe_collector).
+-module(tecipe_monitor).
 -behaviour(gen_server).
 
 -export([start_link/1]).
@@ -9,7 +9,7 @@
 -record(state, {}).
 
 start_link(SName) ->
-    {ok, LName} = tecipe:make_collector_lname(SName),
+    {ok, LName} = tecipe:make_monitor_lname(SName),
     gen_server:start_link({local, LName}, ?MODULE, [], []).
 
 init([]) ->
