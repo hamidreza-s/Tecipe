@@ -1,6 +1,7 @@
 -module(tecipe_ssl).
 
--export([listen/2, accept/1, accept/2, setopts/2, send/2, recv/2, close/1]).
+-export([listen/2, accept/1, accept/2, setopts/2, send/2, recv/2,
+	 controlling_process/2, close/1]).
 
 listen(Port, Opts) ->
     ssl:listen(Port, Opts).
@@ -32,6 +33,9 @@ send(Sock, Data) ->
 
 recv(Sock, Length) ->
     ssl:recv(Sock, Length).
+
+controlling_process(Sock, Pid) ->
+    ssl:controlling_process(Sock, Pid).
 
 close(Sock) ->
     ssl:close(Sock).
