@@ -36,7 +36,7 @@ acceptor_loop(Handler, Transport, ListeningSock) ->
 
     Pid = case Handler of
 	      {Module, Function, Args} ->
-		  spawn(Module, Function, [Transport, Sock, Args]);
+		  proc_lib:spawn(Module, Function, [Transport, Sock, Args]);
 	      Function ->
 		  spawn(fun() -> Function(Transport, Sock) end)
 	  end,

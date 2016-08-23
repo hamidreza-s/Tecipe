@@ -47,7 +47,7 @@ handle_cast(add_worker, State) ->
     Handler = State#state.handler,
     Transport = State#state.transport,
     ListeningSock = State#state.listening_sock,
-    spawn_link(fun() -> worker_loop(AcceptorWorker, Handler, Transport, ListeningSock) end),
+    proc_lib:spawn_link(fun() -> worker_loop(AcceptorWorker, Handler, Transport, ListeningSock) end),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
