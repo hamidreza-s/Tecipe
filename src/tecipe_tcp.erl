@@ -1,7 +1,7 @@
 -module(tecipe_tcp).
 
 -export([listen/2, accept/1, setopts/2, send/2, recv/2,
-	 controlling_process/2, close/1]).
+	 controlling_process/2, peername/1, close/1]).
 
 listen(Port, Opts) ->
     gen_tcp:listen(Port, Opts).
@@ -20,6 +20,9 @@ recv(Sock, Length) ->
 
 controlling_process(Sock, Pid) ->
     gen_tcp:controlling_process(Sock, Pid).
+
+peername(Sock) ->
+    inet:peername(Sock).
 
 close(Sock) ->
     gen_tcp:close(Sock).
