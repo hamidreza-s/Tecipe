@@ -27,9 +27,10 @@ worker_loop(AcceptorWorker, Handler, Transport, ListeningSock, ListenerRec) ->
     ok = add_worker(AcceptorWorker),
     unlink(AcceptorWorker),
 
+    WorkerPID = self(),
     case ListenerRec#tecipe_listener.monitor of
 	true ->
-	    tecipe_monitor:monitor(ListenerRec#tecipe_listener.monitor_name, self());
+	    tecipe_monitor:monitor_worker(ListenerRec#tecipe_listener.monitor_name, Sock, WorkerPID);
 	_ ->
 	    ok
     end,

@@ -47,7 +47,7 @@ acceptor_loop(Handler, Transport, ListeningSock, ListenerRec) ->
 
     case ListenerRec#tecipe_listener.monitor of
 	true ->
-	    tecipe_monitor:monitor_worker(ListenerRec#tecipe_listener.monitor_name, WorkerPID);
+	    tecipe_monitor:monitor_worker(ListenerRec#tecipe_listener.monitor_name, Sock, WorkerPID);
 	_ ->
 	    ok
     end,
