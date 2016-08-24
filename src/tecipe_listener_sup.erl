@@ -5,38 +5,40 @@
 
 -export([init/1]).
 
-start_link(SName, Port, Handler, ListenerOpts, TransportOpts) ->
-    {ok, LName} = tecipe:make_listener_lname(SName),
-    supervisor:start_link({local, LName}, ?MODULE,
-			  [SName, Port, Handler, ListenerOpts, TransportOpts]).
+-include("tecipe.hrl").
 
-init([SName, Port, Handler, ListenerOpts, TransportOpts]) ->
+start_link(Ref, Port, Handler, ListenerRec, TransportOpts) ->
+    Name = ListenerRec#tecipe_listener.listener_name,
+    supervisor:start_link({local, Name}, ?MODULE,
+			  [Ref, Port, Handler, ListenerRec, TransportOpts]).
 
-    Transport = proplists:get_value(transport, ListenerOpts),
+init([Ref, Port, Handler, ListenerRec, TransportOpts]) ->
+
+    Transport = ListenerRec#tecipe_listener.transport,
     {ok, ListeningSock} = Transport:listen(Port, TransportOpts),
 
     AcceptorChild =
-	case proplists:get_value(acceptor, ListenerOpts) of
+	case ListenerRec#tecipe_listener.acceptor_type of
 	    static ->
-		{{tecipe_acceptor_static, SName},
+		{{tecipe_acceptor_static, Ref},
 		 {tecipe_acceptor_static, start_link,
-		  [SName, Handler, ListeningSock, ListenerOpts]},
+		  [Ref, Handler, ListeningSock, ListenerRec]},
 		 permanent,
 		 3000,
 		 supervisor,
 		 [tecipe_acceptor_static]};
 	    dynamic ->
-		{{tecipe_acceptor_dynamic, SName},
+		{{tecipe_acceptor_dynamic, Ref},
 		 {tecipe_acceptor_dynamic, start_link,
-		  [SName, Handler, ListeningSock, ListenerOpts]},
+		  [Ref, Handler, ListeningSock, ListenerRec]},
 		 permanent,
 		 3000,
 		 worker,
 		 [tecipe_acceptor_dynamic]}
 	end,
 
-    MonitorChild = {{tecipe_monitor, SName},
-		    {tecipe_monitor, start_link, [SName]},
+    MonitorChild = {{tecipe_monitor, Ref},
+		    {tecipe_monitor, start_link, [Ref, ListenerRec]},
 		    permanent,
 		    3000,
 		    worker,

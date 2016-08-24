@@ -6,25 +6,33 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--record(state, {name, handler, transport, listening_sock}).
+-include("tecipe.hrl").
 
-start_link(SName, Handler, ListeningSock, ListenerOpts) ->
-    Pool = proplists:get_value(pool, ListenerOpts),
-    Transport = proplists:get_value(transport, ListenerOpts),
-    {ok, LName} = tecipe:make_acceptor_lname(SName),
-    {ok, AcceptorWorker} = gen_server:start_link({local, LName}, ?MODULE,
-						 [SName, Handler, Transport, ListeningSock], []),
+-record(state, {name, handler, transport, listening_sock, listener_rec}).
+
+start_link(Ref, Handler, ListeningSock, ListenerRec) ->
+    Pool = ListenerRec#tecipe_listener.acceptor_pool,
+    Transport = ListenerRec#tecipe_listener.transport,
+    Name = ListenerRec#tecipe_listener.acceptor_name,
+    {ok, AcceptorWorker} = gen_server:start_link({local, Name}, ?MODULE,
+						 [Ref, Handler, Transport, ListeningSock, ListenerRec], []),
     [ok = add_worker(AcceptorWorker) || _ <- lists:seq(1, Pool)],
     {ok, AcceptorWorker}.
-
 
 add_worker(AcceptorWorker) ->
     gen_server:cast(AcceptorWorker, add_worker).
 
-worker_loop(AcceptorWorker, Handler, Transport, ListeningSock) ->
+worker_loop(AcceptorWorker, Handler, Transport, ListeningSock, ListenerRec) ->
     {ok, Sock} = Transport:accept(ListeningSock),
     ok = add_worker(AcceptorWorker),
     unlink(AcceptorWorker),
+
+    case ListenerRec#tecipe_listener.monitor of
+	true ->
+	    tecipe_monitor:monitor(ListenerRec#tecipe_listener.monitor_name, self());
+	_ ->
+	    ok
+    end,
 
     case Handler of
 	{Module, Function, Args} ->
@@ -33,10 +41,11 @@ worker_loop(AcceptorWorker, Handler, Transport, ListeningSock) ->
 	    apply(Function, [Transport, Sock])
     end.
 
-init([SName, Handler, Transport, ListeningSock]) ->
+init([Ref, Handler, Transport, ListeningSock, ListenerRec]) ->
     process_flag(trap_exit, true),
-    {ok, #state{name = SName, handler = Handler,
-		transport = Transport, listening_sock = ListeningSock}}.
+    {ok, #state{name = Ref, handler = Handler,
+		transport = Transport, listening_sock = ListeningSock,
+		listener_rec = ListenerRec}}.
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -47,7 +56,10 @@ handle_cast(add_worker, State) ->
     Handler = State#state.handler,
     Transport = State#state.transport,
     ListeningSock = State#state.listening_sock,
-    proc_lib:spawn_link(fun() -> worker_loop(AcceptorWorker, Handler, Transport, ListeningSock) end),
+    ListenerRec = State#state.listener_rec,
+    proc_lib:spawn_link(fun() ->
+				worker_loop(AcceptorWorker, Handler, Transport, ListeningSock, ListenerRec)
+			end),
     {noreply, State};
 
 handle_cast(_Msg, State) ->

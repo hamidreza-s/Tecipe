@@ -35,7 +35,7 @@ all() ->
     [static_acceptor, dynamic_acceptor].
 
 static_acceptor(_Config) ->
-    Name = foo,
+    Ref = foo,
     Port = 9999,
     Handler = {tecipe_utils, echo_handler, []},
     Acceptor = static,
@@ -43,14 +43,14 @@ static_acceptor(_Config) ->
     Pool = 10,
     ListenerOpts = [{acceptor, Acceptor}, {pool, Pool}, {transport, Transport}],
 
-    {ok, ListenerPID} = tecipe:start_listener(Name, Port, Handler, ListenerOpts),
-    {ok, #tecipe_listener{name = Name,
+    {ok, ListenerPID} = tecipe:start_listener(Ref, Port, Handler, ListenerOpts),
+    {ok, #tecipe_listener{ref = Ref,
 			  listener_name = ListenerName,
 			  listener_pid = ListenerPID,
 			  acceptor_name = AcceptorName,
 			  acceptor_pid = AcceptorPID,
 			  monitor_name = MonitorName,
-			  monitor_pid = MonitorPID}} = tecipe:get_listener(Name),
+			  monitor_pid = MonitorPID}} = tecipe:get_listener(Ref),
 
     ?assertEqual(ListenerPID, whereis(ListenerName)),
     ?assertEqual(AcceptorPID, whereis(AcceptorName)),
@@ -66,7 +66,7 @@ static_acceptor(_Config) ->
     ok.
 
 dynamic_acceptor(_Config) ->
-    Name = bar,
+    Ref = bar,
     Port = 8888,
     Acceptor = dynamic,
     Transport = tecipe_tcp,
@@ -74,14 +74,14 @@ dynamic_acceptor(_Config) ->
     Handler = {tecipe_utils, echo_handler, []},
     ListenerOpts = [{acceptor, Acceptor}, {pool, Pool}, {transport, Transport}],
 
-    {ok, ListenerPID} = tecipe:start_listener(Name, Port, Handler, ListenerOpts),
-    {ok, #tecipe_listener{name = Name,
+    {ok, ListenerPID} = tecipe:start_listener(Ref, Port, Handler, ListenerOpts),
+    {ok, #tecipe_listener{ref = Ref,
 			  listener_name = ListenerName,
 			  listener_pid = ListenerPID,
 			  acceptor_name = AcceptorName,
 			  acceptor_pid = AcceptorPID,
 			  monitor_name = MonitorName,
-			  monitor_pid = MonitorPID}} = tecipe:get_listener(Name),
+			  monitor_pid = MonitorPID}} = tecipe:get_listener(Ref),
 
     ?assertEqual(ListenerPID, whereis(ListenerName)),
     ?assertEqual(AcceptorPID, whereis(AcceptorName)),
