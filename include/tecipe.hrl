@@ -7,7 +7,8 @@
 			  acceptor_type, acceptor_pool,
 			  transport, handler, monitor}).
 
--record(tecipe_socket_stats, {local_ip, local_port, remote_ip, remote_port,
+-record(tecipe_socket_stats, {worker_pid, socket_port,
+			      local_ip, local_port, remote_ip, remote_port,
 			      recv_cnt, recv_max, recv_avg, recv_oct, recv_dvi,
 			      send_cnt, send_max, send_avg, send_oct, send_pend}).
 
@@ -41,3 +42,7 @@
 -type tecipe_transport_opts() :: gen_tcp:option() | ssl:options() | sctp:option().
 
 -type tecipe_listener_pid() :: pid().
+
+-type tecipe_workers() :: list(any()).
+
+-type tecipe_stats() :: list(any()).

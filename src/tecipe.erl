@@ -2,6 +2,7 @@
 
 -export([start/0, start_listener/3, start_listener/4, start_listener/5,
 	 make_listener_name/1, make_acceptor_name/1, make_monitor_name/1,
+	 get_workers/1, get_stats/1, print_stats/1,
 	 get_listener/1, stop_listener/1]).
 
 -include("tecipe.hrl").
@@ -67,6 +68,11 @@ start_listener(Ref, Port, Handler, ListenerOpts, TransportOpts) ->
 
     {ok, ListenerPID}.
 
+-spec stop_listener(tecipe_listener_ref()) -> ok.
+stop_listener(Ref) ->
+    ok = supervisor:terminate_child(tecipe_sup, {tecipe_listener_sup, Ref}),
+    supervisor:delete_child(tecipe_sup, {tecipe_listener_sup, Ref}).
+
 -spec get_listener(tecipe_listener_ref()) -> {ok, tecipe_listener()} | {error, not_found}.
 get_listener(Ref) ->
     case ets:lookup(?LISTENER_TAB, Ref) of
@@ -76,9 +82,21 @@ get_listener(Ref) ->
 	    {error, not_found}
     end.
 
--spec stop_listener(tecipe_listener_ref()) -> ok.
-stop_listener(Ref) ->
-    supervisor:terminate_child(tecipe_sup, {tecipe_listener_sup, Ref}).
+-spec get_workers(tecipe_listener_ref()) -> {ok, tecipe_workers()}.
+get_workers(Ref) ->
+    {ok, MonitorName} = make_monitor_name(Ref),
+    tecipe_monitor:get_workers(MonitorName).
+
+-spec get_stats(tecipe_listener_ref()) -> {ok, tecipe_stats()}.
+get_stats(Ref) ->
+    {ok, MonitorName} = make_monitor_name(Ref),
+    tecipe_monitor:get_stats(MonitorName).
+
+-spec print_stats(tecipe_listener_ref()) -> ok.
+print_stats(Ref) ->
+    {ok, Stats} = get_stats(Ref),
+    tecipe_stats:format(Stats),
+    ok.
 
 -spec make_listener_name(tecipe_listener_ref()) -> {ok, tecipe_listener_name()}.
 make_listener_name(Ref)

@@ -8,41 +8,56 @@
 
 -include("tecipe.hrl").
 
--record(state, {workers}).
+-record(state, {ref, listener_rec, workers}).
 
 monitor_worker(MonitorName, Sock, WorkerPID) ->
     gen_server:cast(MonitorName, {monitor_worker, Sock, WorkerPID}).
 
-get_workers(ListenerRef) ->
-    {ok, MonitorName} = tecipe:make_monitor_name(ListenerRef),
+get_workers(MonitorName) ->
     WorkersDict = gen_server:call(MonitorName, get_workers),
     {ok, dict:to_list(WorkersDict)}.
 
-get_stats(ListenerRef) ->
-    {ok, MonitorName} = tecipe:make_monitor_name(ListenerRef),
+get_stats(MonitorName) ->
     Stats = gen_server:call(MonitorName, get_stats),
     {ok, dict:to_list(Stats)}.
 
 start_link(Ref, ListenerRec) ->
     Name = ListenerRec#tecipe_listener.monitor_name,
-    gen_server:start_link({local, Name}, ?MODULE, [Ref], []).
+    gen_server:start_link({local, Name}, ?MODULE, [Ref, ListenerRec], []).
 
-init([_Ref]) ->
+init([Ref, ListenerRec]) ->
     Workers = dict:new(),
-    {ok, #state{workers = Workers}}.
+    {ok, #state{ref = Ref, listener_rec = ListenerRec, workers = Workers}}.
 
 handle_call(get_workers, _From, #state{workers = Workers} = State) ->
     {reply, Workers, State};
 
 handle_call(get_stats, _From, #state{workers = Workers} = State) ->
-    Stats = dict:map(fun(_MonitorRef, {Sock, _WorkerPID}) ->
-			     {ok, {RemoteIP, RemotePort}} = inet:peername(Sock),
-			     {ok, {LocalIP, LocalPort}} = inet:sockname(Sock),
+    ListenerRec = State#state.listener_rec,
+    Transport = ListenerRec#tecipe_listener.transport,
+    Stats = dict:map(fun(_MonitorRef, {Sock, WorkerPID}) ->
+
+			     {ok, {RemoteIP, RemotePort}} = Transport:peername(Sock),
+			     {ok, {LocalIP, LocalPort}} = Transport:sockname(Sock),
+			     {ok, SockStats} = Transport:getstat(Sock),
+
 			     #tecipe_socket_stats{
+				worker_pid = WorkerPID,
+				socket_port = Sock,
 				remote_ip = RemoteIP,
 				remote_port = RemotePort,
 				local_ip = LocalIP,
-				local_port = LocalPort}
+				local_port = LocalPort,
+				recv_cnt = proplists:get_value(recv_cnt, SockStats),
+				recv_max = proplists:get_value(recv_max, SockStats),
+				recv_avg = proplists:get_value(recv_avg, SockStats),
+				recv_oct = proplists:get_value(recv_oct, SockStats),
+				recv_dvi = proplists:get_value(recv_dvi, SockStats),
+				send_cnt = proplists:get_value(send_cnt, SockStats),
+				send_max = proplists:get_value(send_max, SockStats),
+				send_avg = proplists:get_value(send_avg, SockStats),
+				send_oct = proplists:get_value(send_oct, SockStats),
+				send_pend = proplists:get_value(send_pend, SockStats)}
 		     end,
 		     Workers),
     {reply, Stats, State};
