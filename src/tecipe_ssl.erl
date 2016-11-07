@@ -3,6 +3,8 @@
 -export([listen/2, accept/1, accept/2, setopts/2, send/2, recv/2,
 	 controlling_process/2, peername/1, sockname/1, getstat/1, close/1]).
 
+-include("tecipe.hrl").
+
 listen(Port, Opts) ->
     ssl:listen(Port, Opts).
 
@@ -25,26 +27,26 @@ do_accept(Sock, Timeout) ->
             {error, Reason}
     end.
 
-setopts(Sock, Opts) ->
+setopts(#tecipe_socket{inet_socket = Sock}, Opts) ->
     ssl:setopts(Sock, Opts).
 
-send(Sock, Data) ->
+send(#tecipe_socket{inet_socket = Sock}, Data) ->
     ssl:send(Sock, Data).
 
-recv(Sock, Length) ->
+recv(#tecipe_socket{inet_socket = Sock}, Length) ->
     ssl:recv(Sock, Length).
 
-controlling_process(Sock, Pid) ->
+controlling_process(#tecipe_socket{inet_socket = Sock}, Pid) ->
     ssl:controlling_process(Sock, Pid).
 
-peername(Sock) ->
+peername(#tecipe_socket{inet_socket = Sock}) ->
     ssl:peername(Sock).
 
-sockname(Sock) ->
+sockname(#tecipe_socket{inet_socket = Sock}) ->
     ssl:sockname(Sock).
 
-getstat(Sock) ->
+getstat(#tecipe_socket{inet_socket = Sock}) ->
     ssl:getstat(Sock).
 
-close(Sock) ->
+close(#tecipe_socket{inet_socket = Sock}) ->
     ssl:close(Sock).

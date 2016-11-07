@@ -36,6 +36,7 @@ start_listener(Ref, Port, Handler, ListenerOpts, TransportOpts) ->
     Pool = proplists:get_value(pool, ListenerOpts, default_listener_pool_count()),
     Transport = proplists:get_value(transport, ListenerOpts, default_listener_transport()),
     Monitor = proplists:get_value(monitor, ListenerOpts, default_listener_monitor()),
+    Proxy = proplists:get_value(proxy, ListenerOpts, default_listener_proxy()),
 
     {ok, ListenerName} = make_listener_name(Ref),
     {ok, AcceptorName} = make_acceptor_name(Ref),
@@ -49,7 +50,8 @@ start_listener(Ref, Port, Handler, ListenerOpts, TransportOpts) ->
 				   acceptor_pool = Pool,
 				   transport = Transport,
 				   handler = Handler,
-				   monitor = Monitor},
+				   monitor = Monitor,
+				   proxy = Proxy},
 
     ListenerSup = {{tecipe_listener_sup, Ref},
 		   {tecipe_listener_sup, start_link,
@@ -123,4 +125,7 @@ default_listener_transport() ->
     tecipe_tcp.
 
 default_listener_monitor() ->
+    false.
+
+default_listener_proxy() ->
     false.
