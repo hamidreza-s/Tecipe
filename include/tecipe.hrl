@@ -77,9 +77,10 @@
 -type tecipe_listener_opts() :: list(tecipe_listener_opt()).
 
 -type tecipe_listener_opt() :: {transport, tecipe_listener_transport()} | {monitor, boolean()} |
-			       {acceptor, static | dynamic} | {pool, integer()}.
+			       {acceptor, tecipe_acceptor_type()} | {pool, integer()} |
+			       {proxy, false | tecipe_proxy_version()}.
 
--type tecipe_transport_opts() :: gen_tcp:option() | ssl:options() | sctp:option().
+-type tecipe_transport_opts() :: gen_tcp:option() | ssl:options().
 
 -type tecipe_listener_pid() :: pid().
 
