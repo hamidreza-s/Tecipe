@@ -35,7 +35,7 @@ Handler = fun(Transport, Sock) ->
           end,
 
 ListenerOpts = [{acceptor, static}, {pool, 50}, {transport, tecipe_tcp}, {monitor, true}],
-{ok, ListenerPID} = tecipe:start_listener(Ref, Name, Handler, ListenerOpts),
+{ok, ListenerPID} = tecipe:start_listener(Ref, Port, Handler, ListenerOpts),
 ```
 
 This way a static pool with 50 acceptors is started and echoes back every data it receives.
