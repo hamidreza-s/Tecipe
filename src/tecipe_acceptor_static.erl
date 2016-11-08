@@ -38,7 +38,7 @@ start_acceptor(Handler, Transport, ListeningSock, ListenerRec) ->
 acceptor_loop(Handler, Transport, ListeningSock, ListenerRec) ->
     {ok, Sock} = Transport:accept(ListeningSock),
 
-    TecipeSock = tecipe_socket:upgrade(Sock, ListenerRec),
+    TecipeSock = tecipe_socket:upgrade(Sock, Transport, ListenerRec),
     WorkerPID = case Handler of
 		    {Module, Function, Args} ->
 			proc_lib:spawn(Module, Function, [Transport, TecipeSock, Args]);

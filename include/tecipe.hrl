@@ -4,8 +4,11 @@
 -record(tecipe_socket, {inet_socket :: tecipe_inet_socket(),
 			proxy :: tecipe_proxy()}).
 
--record(tecipe_proxy, {inet_version :: ipv4 | ipv6,
-		       proxy_version :: tecipe_proxy_version(),
+
+-record(tecipe_proxy, {proxy_version :: tecipe_proxy_version(),
+		       proxy_command :: tecipe_proxy_command(),
+		       proxy_family :: tecipe_proxy_family(),
+		       proxy_transport :: tecipe_proxy_transport(),
 		       source_address :: inet:ip_address(),
 		       dest_address :: inet:ip_address(),
 		       source_port :: inet:port_number(),
@@ -21,6 +24,9 @@
 			  acceptor_type :: tecipe_acceptor_type(),
 			  acceptor_pool :: integer(),
 			  transport :: tecipe_listener_transport(),
+			  transport_init_opts :: tecipe_transport_opts(),
+			  transport_default_opts :: tecipe_transport_opts(),
+			  transport_user_opts :: tecipe_transport_opts(),
 			  handler :: tecipe_listener_handler(),
 			  monitor :: boolean(),
 			  proxy :: false | tecipe_proxy_version()}).
@@ -42,11 +48,17 @@
 			      send_oct :: integer(),
 			      send_pend :: integer()}).
 
+-type tecipe_proxy_version() :: v1 | v2.
+
+-type tecipe_proxy_command() :: local | proxy.
+
+-type tecipe_proxy_family() :: unspec | inet4 | inet6 | unix.
+
+-type tecipe_proxy_transport() :: unspec | stream | dgram.
+
 -type tecipe_acceptor_type() :: dynamic | static.
 
 -type tecipe_proxy() :: #tecipe_proxy{}.
-
--type tecipe_proxy_version() :: v1 | v2.
 
 -type tecipe_inet_socket() ::  inet:socket() | ssl:sslsocket().
 

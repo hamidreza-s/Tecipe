@@ -31,12 +31,14 @@ start_listener(Ref, Port, Handler, ListenerOpts) ->
 		     tecipe_listener_opts(),
 		     tecipe_transport_opts()) -> {ok, tecipe_listener_pid()}.
 
-start_listener(Ref, Port, Handler, ListenerOpts, TransportOpts) ->
+start_listener(Ref, Port, Handler, ListenerOpts, TransportUserOpts) ->
     Acceptor = proplists:get_value(acceptor, ListenerOpts, default_listener_acceptor()),
     Pool = proplists:get_value(pool, ListenerOpts, default_listener_pool_count()),
     Transport = proplists:get_value(transport, ListenerOpts, default_listener_transport()),
     Monitor = proplists:get_value(monitor, ListenerOpts, default_listener_monitor()),
     Proxy = proplists:get_value(proxy, ListenerOpts, default_listener_proxy()),
+    TransportInitOpts = transport_init_opts(),
+    TransportDefaultOpts = transport_default_opts(),
 
     {ok, ListenerName} = make_listener_name(Ref),
     {ok, AcceptorName} = make_acceptor_name(Ref),
@@ -49,13 +51,16 @@ start_listener(Ref, Port, Handler, ListenerOpts, TransportOpts) ->
 				   acceptor_type = Acceptor,
 				   acceptor_pool = Pool,
 				   transport = Transport,
+				   transport_init_opts = TransportInitOpts,
+				   transport_default_opts = TransportDefaultOpts,
+				   transport_user_opts = TransportUserOpts,
 				   handler = Handler,
 				   monitor = Monitor,
 				   proxy = Proxy},
 
     ListenerSup = {{tecipe_listener_sup, Ref},
 		   {tecipe_listener_sup, start_link,
-		    [Ref, Port, Handler, ListenerRec, TransportOpts]},
+		    [Ref, Port, Handler, ListenerRec]},
 		   permanent,
 		   3000,
 		   supervisor,
@@ -129,3 +134,9 @@ default_listener_monitor() ->
 
 default_listener_proxy() ->
     false.
+
+transport_init_opts() ->
+    [{mode, binary}, {active, false}, {packet, raw}].
+
+transport_default_opts() ->
+    [{mode, list}, {active, true}].

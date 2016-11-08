@@ -1,22 +1,23 @@
 -module(tecipe_socket).
 
--export([upgrade/2]).
+-export([upgrade/3]).
 
 -include("tecipe.hrl").
 
--spec upgrade(tecipe_inet_socket(), tecipe_listener()) -> tecipe_socket().
-upgrade(Sock, ListenerRec) ->
-    Proxy = ListenerRec#tecipe_listener.proxy,
-    #tecipe_socket{inet_socket = Sock, proxy = proxy(Sock, Proxy)}.
-
+-spec upgrade(tecipe_inet_socket(),
+	      tecipe_listener_transport(),
+	      tecipe_listener()) -> tecipe_socket().
+upgrade(Sock, Transport, ListenerRec) ->
+    TecipeSock = tecipe_proxy:check(#tecipe_socket{inet_socket = Sock}, Transport, ListenerRec),
+    ok = apply_opts(TecipeSock, Transport, ListenerRec),
+    TecipeSock.
 
 %% === private functions
 
-proxy(_, false) ->
-    #tecipe_proxy{};
-proxy(_Sock, v1) ->
-    %% @TODO: implement it.
-    #tecipe_proxy{};
-proxy(_Sock, v2) ->
-    %% @TODO: implement it.
-    #tecipe_proxy{}.
+-spec apply_opts(tecipe_socket(),
+		 tecipe_listener_transport(),
+		 tecipe_listener()) -> ok.
+apply_opts(Sock, Transport, #tecipe_listener{transport_user_opts = UserOpts,
+					     transport_default_opts = DefaultOpts}) ->
+    %% @NOTE: user options has precedence over default options, so they come first in list
+    Transport:setopts(Sock, UserOpts ++ DefaultOpts).

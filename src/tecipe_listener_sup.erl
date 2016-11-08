@@ -1,21 +1,21 @@
 -module(tecipe_listener_sup).
 -behaviour(supervisor).
 
--export([start_link/5]).
+-export([start_link/4]).
 
 -export([init/1]).
 
 -include("tecipe.hrl").
 
-start_link(Ref, Port, Handler, ListenerRec, TransportOpts) ->
+start_link(Ref, Port, Handler, ListenerRec) ->
     Name = ListenerRec#tecipe_listener.listener_name,
-    supervisor:start_link({local, Name}, ?MODULE,
-			  [Ref, Port, Handler, ListenerRec, TransportOpts]).
+    supervisor:start_link({local, Name}, ?MODULE, [Ref, Port, Handler, ListenerRec]).
 
-init([Ref, Port, Handler, ListenerRec, TransportOpts]) ->
+init([Ref, Port, Handler, ListenerRec]) ->
 
     Transport = ListenerRec#tecipe_listener.transport,
-    {ok, ListeningSock} = Transport:listen(Port, TransportOpts),
+    TransportInitOpts = ListenerRec#tecipe_listener.transport_init_opts,
+    {ok, ListeningSock} = Transport:listen(Port, TransportInitOpts),
 
     AcceptorChild =
 	case ListenerRec#tecipe_listener.acceptor_type of
