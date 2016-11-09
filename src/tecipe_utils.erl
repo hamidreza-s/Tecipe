@@ -26,5 +26,5 @@ echo_handler(Transport, #tecipe_socket{inet_socket = Sock} = TecipeSock, Args) -
 test(Port) ->
     tecipe:start_listener(test, Port, {tecipe_utils, echo_handler, []},
 			  [{acceptor, dynamic}, {pool, 10},
-			   {transport, tecipe_tcp}, {monitor, true}, {proxy, v1}],
+			   {transport, tecipe_tcp}, {monitor, true}, {proxy, v2}],
 			  [{reuseaddr, true}]).

@@ -10,8 +10,8 @@
 
 -record(state, {ref, listener_rec, workers}).
 
-monitor_worker(MonitorName, Sock, WorkerPID) ->
-    gen_server:cast(MonitorName, {monitor_worker, Sock, WorkerPID}).
+monitor_worker(MonitorName, TecipeSock, WorkerPID) ->
+    gen_server:cast(MonitorName, {monitor_worker, TecipeSock, WorkerPID}).
 
 get_workers(MonitorName) ->
     WorkersDict = gen_server:call(MonitorName, get_workers),
@@ -35,19 +35,20 @@ handle_call(get_workers, _From, #state{workers = Workers} = State) ->
 handle_call(get_stats, _From, #state{workers = Workers} = State) ->
     ListenerRec = State#state.listener_rec,
     Transport = ListenerRec#tecipe_listener.transport,
-    Stats = dict:map(fun(_MonitorRef, {Sock, WorkerPID}) ->
+    Stats = dict:map(fun(_MonitorRef, {TecipeSock, WorkerPID}) ->
 
-			     {ok, {RemoteIP, RemotePort}} = Transport:peername(Sock),
-			     {ok, {LocalIP, LocalPort}} = Transport:sockname(Sock),
-			     {ok, SockStats} = Transport:getstat(Sock),
+			     {ok, {RemoteIP, RemotePort}} = Transport:peername(TecipeSock),
+			     {ok, {LocalIP, LocalPort}} = Transport:sockname(TecipeSock),
+			     {ok, SockStats} = Transport:getstat(TecipeSock),
 
 			     #tecipe_socket_stats{
 				worker_pid = WorkerPID,
-				socket_port = Sock,
+				socket_port = TecipeSock#tecipe_socket.inet_socket,
 				remote_ip = RemoteIP,
 				remote_port = RemotePort,
 				local_ip = LocalIP,
 				local_port = LocalPort,
+				proxy = has_proxy(TecipeSock),
 				recv_cnt = proplists:get_value(recv_cnt, SockStats),
 				recv_max = proplists:get_value(recv_max, SockStats),
 				recv_avg = proplists:get_value(recv_avg, SockStats),
@@ -66,9 +67,9 @@ handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
-handle_cast({monitor_worker, Sock, WorkerPID}, #state{workers = Workers} = State) ->
+handle_cast({monitor_worker, TecipeSock, WorkerPID}, #state{workers = Workers} = State) ->
     MonitorRef = monitor(process, WorkerPID),
-    {noreply, State#state{workers = dict:store(MonitorRef, {Sock, WorkerPID}, Workers)}};
+    {noreply, State#state{workers = dict:store(MonitorRef, {TecipeSock, WorkerPID}, Workers)}};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -86,3 +87,10 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+%% === private functions
+
+has_proxy(#tecipe_socket{proxy = undefined}) ->
+    false;
+has_proxy(#tecipe_socket{proxy = Proxy}) ->
+    Proxy#tecipe_proxy.proxy_version.

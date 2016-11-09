@@ -43,13 +43,17 @@ controlling_process(#tecipe_socket{inet_socket = Sock}, Pid) ->
 controlling_process(Sock, Pid) ->
     ssl:controlling_process(Sock, Pid).
 
-peername(#tecipe_socket{inet_socket = Sock}) ->
+peername(#tecipe_socket{inet_socket = Sock, proxy = false}) ->
     ssl:peername(Sock);
+peername(#tecipe_socket{proxy = #tecipe_proxy{source_address = Address, source_port = Port}}) ->
+    {ok, {Address, Port}};
 peername(Sock) ->
     ssl:peername(Sock).
 
-sockname(#tecipe_socket{inet_socket = Sock}) ->
+sockname(#tecipe_socket{inet_socket = Sock, proxy = false}) ->
     ssl:sockname(Sock);
+sockname(#tecipe_socket{proxy = #tecipe_proxy{dest_address = Address, dest_port = Port}}) ->
+    {ok, {Address, Port}};
 sockname(Sock) ->
     ssl:sockname(Sock).
 

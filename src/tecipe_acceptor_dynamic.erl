@@ -28,15 +28,17 @@ worker_loop(AcceptorWorker, Handler, Transport, ListeningSock, ListenerRec) ->
     ok = add_worker(AcceptorWorker),
     unlink(AcceptorWorker),
 
+    TecipeSock = tecipe_socket:upgrade(Sock, Transport, ListenerRec),
+
     WorkerPID = self(),
     case ListenerRec#tecipe_listener.monitor of
 	true ->
-	    tecipe_monitor:monitor_worker(ListenerRec#tecipe_listener.monitor_name, Sock, WorkerPID);
+	    tecipe_monitor:monitor_worker(ListenerRec#tecipe_listener.monitor_name,
+					  TecipeSock, WorkerPID);
 	_ ->
 	    ok
     end,
 
-    TecipeSock = tecipe_socket:upgrade(Sock, Transport, ListenerRec),
     case Handler of
 	{Module, Function, Args} ->
 	    apply(Module, Function, [Transport, TecipeSock, Args]);

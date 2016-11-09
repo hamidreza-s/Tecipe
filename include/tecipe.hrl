@@ -37,6 +37,7 @@
 			      local_port :: inet:ip_address(),
 			      remote_ip :: inet:ip_address(),
 			      remote_port :: inet:ip_address(),
+			      proxy :: false | tecipe_proxy_version(),
 			      recv_cnt :: integer(),
 			      recv_max :: integer(),
 			      recv_avg :: integer(),
