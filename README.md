@@ -1,7 +1,12 @@
 Tecipe
 =====
 
-Tecipe (pronounce it like recipe) is a lightweight and flexible TCP socket acceptor pool for Erlang.
+Tecipe (pronounce it like recipe) is a lightweight and flexible TCP socket acceptor pool for Erlang. Its features are as follows:
+
+- Accepting connections in two dynamic and static methods based on config for different purposes
+- Parsing [Proxy Protocol](http://www.haproxy.org/download/1.5/doc/proxy-protocol.txt) (v1 and v2) for transporting connection information accross NAT or TCP proxies
+- Monitoring connections and reporting their statistics based on configuration
+- Providing both TCP and SSL transport and being pluggable for adding new transports
 
 Quick Start
 -----
@@ -21,20 +26,26 @@ Then start its application.
 ok = application:start(tecipe).
 ```
 
-Now you can start a TCP listener as follows:
+Now you can start a TCP listener with a `named-fun` as follows:
 
 ```erlang
 Ref = foo, Port = 8080,
-Handler = fun(Transport, Sock) ->
+Handler = fun Loop(Transport, Sock) ->
               receive
                   {tcp, Data} ->
-                      Transport:send(Sock, Data);
+                      Transport:send(Sock, Data),
+		      Loop(Transport, Sock);
                    _ ->
                       Transport:close(Sock)
               end
           end,
 
-ListenerOpts = [{acceptor, static}, {pool, 50}, {transport, tecipe_tcp}, {monitor, true}],
+Acceptor = {acceptor, static},
+Pool = {pool, 50},
+Transport = {transport, tecipe_tcp},
+Monitor = {monitor, true},
+Proxy = {proxy, v2},
+ListenerOpts = [Acceptor, Pool, Transport, Monitor, Proxy],
 {ok, ListenerPID} = tecipe:start_listener(Ref, Port, Handler, ListenerOpts),
 ```
 
@@ -110,17 +121,13 @@ Using `get_stats/1` you can get the statistics as return value and format it as 
 all the available statistics as follows.
 
 ```
-worker-pid      socket-port          monitor-ref          local-address        remote-address       recv-cnt recv-max recv-avg recv-oct recv-dvi send-cnt send-max send-avg send-oct send-pend
---------------- -------------------  -------------------  -------------------  -------------------  -------- -------- -------- -------- -------- -------- -------- -------- -------- ---------
-<0.227.0>       #Port<0.40397>       #Ref<0.0.1.1156>     127.0.0.1:9999       127.0.0.1:52876      1631     42       20       23112    0        1112     40       20       23112    0
-<0.219.0>       #Port<0.40389>       #Ref<0.0.1.1140>     127.0.0.1:9999       127.0.0.1:52868      6341     60       20       23311    0        1621     40       20       23311    0
-<0.211.0>       #Port<0.40381>       #Ref<0.0.1.1124>     127.0.0.1:9999       127.0.0.1:52860      6112     31       21       23641    0        6322     39       21       23641    0
-<0.224.0>       #Port<0.40394>       #Ref<0.0.1.1150>     127.0.0.1:9999       127.0.0.1:52873      1624     60       21       23732    0        6412     40       21       23732    0
-<0.216.0>       #Port<0.40386>       #Ref<0.0.1.1134>     127.0.0.1:9999       127.0.0.1:52865      5123     10       21       23373    0        1523     40       21       23373    0
-<0.208.0>       #Port<0.40378>       #Ref<0.0.1.1118>     127.0.0.1:9999       127.0.0.1:52857      1112     35       20       22523    0        1644     39       20       22523    0
-<0.221.0>       #Port<0.40391>       #Ref<0.0.1.1144>     127.0.0.1:9999       127.0.0.1:52870      1632     70       21       23394    0        1114     40       21       23394    0
-<0.213.0>       #Port<0.40383>       #Ref<0.0.1.1128>     127.0.0.1:9999       127.0.0.1:52862      2312     49       20       23326    0        6322     40       20       23326    0
-
+worker-pid      socket-port          monitor-ref          local-address        remote-address      proxy recv-cnt recv-max recv-avg recv-oct recv-dvi send-cnt send-max send-avg send-oct send-pend
+--------------- -------------------  -------------------  -------------------  ------------------- ----- -------- -------- -------- -------- -------- -------- -------- -------- -------- ---------
+<0.227.0>       #Port<0.40397>       #Ref<0.0.1.1156>     192.168.100.2:9999   192.168.103.1:52876     v2    1631     42       20       23112    0        1112     40       20       23112    0
+<0.219.0>       #Port<0.40389>       #Ref<0.0.1.1140>     192.168.100.2:9999   192.168.201.5:52868     v2    6341     60       20       23311    0        1621     40       20       23311    0
+<0.211.0>       #Port<0.40381>       #Ref<0.0.1.1124>     192.168.100.2:9999   192.168.42.63:52860     v2    6112     31       21       23641    0        6322     39       21       23641    0
+<0.224.0>       #Port<0.40394>       #Ref<0.0.1.1150>     192.168.100.2:9999   192.168.12.64:52873     v2    1624     60       21       23732    0        6412     40       21       23732    0
+<0.216.0>       #Port<0.40386>       #Ref<0.0.1.1134>     192.168.100.2:9999   192.168.115.9:52865     v2    5123     10       21       23373    0        1523     40       21       23373    0
 ```
 
 For more information about the fields please refer to [inet documentation page](http://erlang.org/doc/man/inet.html#getstat-1) of Erlang/OTP.
