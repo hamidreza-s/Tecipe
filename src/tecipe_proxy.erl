@@ -47,14 +47,29 @@ check(Sock, _, _) ->
 parse_v2(<<?V2_VERSION:4, Command:4, Family:4, Transport:4>>, Body) ->
     error_logger:info_msg("proxy info: ~p~n", [{Command, Transport, Family}]),
     error_logger:info_msg("proxy body: ~p~n", [Body]),
-    #tecipe_proxy{proxy_version = v2,
-		  proxy_command = parse_v2_command(Command),
-		  proxy_family = parse_v2_family(Family),
-		  proxy_transport = parse_v2_transport(Transport),
-		  source_address = todo,
-		  dest_address = todo,
-		  source_port = todo,
-		  dest_port = todo}.
+    do_parse_v2(#tecipe_proxy{proxy_version = v2,
+			      proxy_command = parse_v2_command(Command),
+			      proxy_family = parse_v2_family(Family),
+			      proxy_transport = parse_v2_transport(Transport)},
+		Body).
+
+do_parse_v2(#tecipe_proxy{proxy_family = inet4} = Proxy,
+	    <<SA1:8, SA2:8, SA3:8, SA4:8, DA1:8, DA2:8, DA3:8, DA4:8,
+	      SourcePort:16, DestPort:16, _/binary>>) ->
+    Proxy#tecipe_proxy{
+      source_address = {SA1, SA2, SA3, SA4},
+      dest_address = {DA1, DA2, DA3, DA4},
+      source_port = SourcePort,
+      dest_port = DestPort};
+
+do_parse_v2(Proxy, _) ->
+    %% @TODO: implement inet6 and unix sockets
+    Proxy#tecipe_proxy{
+      source_address = unsupported,
+      dest_address = unsupported,
+      source_port = unsupported,
+      dest_port = unsupported}.
+
 
 -spec parse_v2_command(integer()) -> atom().
 parse_v2_command(?V2_COMMAND_LOCAL) -> local;
