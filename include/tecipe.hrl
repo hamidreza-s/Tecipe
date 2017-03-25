@@ -90,6 +90,7 @@
 -type tecipe_listener_opts() :: list(tecipe_listener_opt()).
 
 -type tecipe_listener_opt() :: {transport, tecipe_listener_transport()} | {monitor, boolean()} |
+			       inet | inet6 | inet:ip_address() |
 			       {acceptor, tecipe_acceptor_type()} | {pool, integer()} |
 			       {proxy, false | tecipe_proxy_version()}.
 

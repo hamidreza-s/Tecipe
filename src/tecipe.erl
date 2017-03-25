@@ -37,7 +37,7 @@ start_listener(Ref, Port, Handler, ListenerOpts, TransportUserOpts) ->
     Transport = proplists:get_value(transport, ListenerOpts, default_listener_transport()),
     Monitor = proplists:get_value(monitor, ListenerOpts, default_listener_monitor()),
     Proxy = proplists:get_value(proxy, ListenerOpts, default_listener_proxy()),
-    TransportInitOpts = transport_init_opts(),
+    TransportInitOpts = transport_init_opts(ListenerOpts),
     TransportDefaultOpts = transport_default_opts(),
 
     {ok, ListenerName} = make_listener_name(Ref),
@@ -135,8 +135,22 @@ default_listener_monitor() ->
 default_listener_proxy() ->
     false.
 
-transport_init_opts() ->
-    [{mode, binary}, {active, false}, {packet, raw}].
+transport_init_opts(ListenerOpts) ->
+    Network = case proplists:get_value(network, ListenerOpts) of
+		  undefined ->
+		      inet;
+		  AddrType ->
+		      AddrType
+	      end,
+    IP = case proplists:get_value(ip, ListenerOpts) of
+	     undefined ->
+		 {127,0,0,1};
+	     Addr when Network == inet ->
+		 tecipe_utils:ipv4_ascii_to_bin(Addr);
+	     Addr when Network == inet6 ->
+		 tecipe_utils:ipv6_ascii_to_bin(Addr)
+	 end,
+    [{mode, binary}, {active, false}, {packet, raw}, Network, {ip, IP}].
 
 transport_default_opts() ->
     [{mode, list}, {active, true}].
