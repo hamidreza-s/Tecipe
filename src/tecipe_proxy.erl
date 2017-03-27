@@ -90,8 +90,19 @@ do_parse_v2(#tecipe_proxy{proxy_family = inet4} = Proxy,
       source_port = SourcePort,
       dest_port = DestPort};
 
+do_parse_v2(#tecipe_proxy{proxy_family = inet6} = Proxy,
+	    <<SA1:16, SA2:16, SA3:16, SA4:16, SA5:16, SA6:16, SA7:16, SA8:16,
+	      DA1:16, DA2:16, DA3:16, DA4:16, DA5:16, DA6:16, DA7:16, DA8:16,
+	      SrcPort:16,
+	      DestPort:16, _/binary>>) ->
+    Proxy#tecipe_proxy{
+      source_address = SrcPort,
+      dest_address = DestPort,
+      source_port = {SA1, SA2, SA3, SA4, SA5, SA6, SA7, SA8},
+      dest_port = {DA1, DA2, DA3, DA4, DA5, DA6, DA7, DA8}};
+
 do_parse_v2(Proxy, _) ->
-    %% @TODO: implement inet6 and unix sockets
+    %% @TODO: implement unix sockets
     Proxy#tecipe_proxy{
       source_address = unsupported,
       dest_address = unsupported,
