@@ -17,7 +17,5 @@ upgrade(Sock, Transport, ListenerRec) ->
 -spec apply_opts(tecipe_socket(),
 		 tecipe_listener_transport(),
 		 tecipe_listener()) -> ok.
-apply_opts(Sock, Transport, #tecipe_listener{transport_user_opts = UserOpts,
-					     transport_default_opts = DefaultOpts}) ->
-    %% @NOTE: user options has precedence over default options, so they come first in list
-    Transport:setopts(Sock, UserOpts ++ DefaultOpts).
+apply_opts(Sock, Transport, #tecipe_listener{transport_default_opts = DefaultOpts}) ->
+    Transport:setopts(Sock, DefaultOpts).

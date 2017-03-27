@@ -1,30 +1,24 @@
 -module(tecipe_utils).
 
--export([echo_handler/3, test/1]).
+-export([ipv4_ascii_to_bin/1, ipv4_bin_to_ascii/1]).
+-export([ipv6_ascii_to_bin/1, ipv6_bin_to_ascii/1]).
 
--include("tecipe.hrl").
+-spec ipv4_ascii_to_bin(string()) -> inet:ip4_address().
+ipv4_ascii_to_bin(IPv4Ascii) ->
+    {ok, IPv4Tuple} = inet_parse:ipv4strict_address(IPv4Ascii),
+    IPv4Tuple.
 
-echo_handler(Transport, #tecipe_socket{inet_socket = Sock} = TecipeSock, Args) ->
-    error_logger:info_msg("echo handler socket: ~p~n", [TecipeSock]),
-    receive
-	{tcp, Sock, Data} ->
-	    error_logger:info_msg("echo handler got: ~p~n", [Data]),
-	    Transport:send(TecipeSock, Data),
-	    error_logger:info_msg("echo handler sent: ~p~n", [Data]),
-	    echo_handler(Transport, TecipeSock, Args);
-	{tcp_error, Sock, _Reason} ->
-	    error_logger:info_msg("echo handler got error and closed!~n"),
-	    Transport:close(TecipeSock);
-	{tcp_closed, Sock} ->
-	    error_logger:info_msg("echo handler closed.~n"),
-	    Transport:close(TecipeSock);
-	Unexpected ->
-	    error_logger:info_msg("echo handler got unexpected data and closed: ~p~n", [Unexpected]),
-	    Transport:close(TecipeSock)
-    end.
+-spec ipv4_bin_to_ascii(inet:ip4_address()) -> string().
+ipv4_bin_to_ascii(IPv4Tuple) ->
+    IPv4Ascii = inet_parse:ntoa(IPv4Tuple),
+    IPv4Ascii.
 
-test(Port) ->
-    tecipe:start_listener(test, Port, {tecipe_utils, echo_handler, []},
-			  [{acceptor, dynamic}, {pool, 10},
-			   {transport, tecipe_tcp}, {monitor, true}, {proxy, v2}],
-			  [{reuseaddr, true}]).
+-spec ipv6_ascii_to_bin(string()) -> inet:ip6_address().
+ipv6_ascii_to_bin(IPv6Ascii) ->
+    {ok, IPv6Tuple} = inet_parse:ipv6strict_address(IPv6Ascii),
+    IPv6Tuple.
+
+-spec ipv6_bin_to_ascii(inet:ip6_address()) -> string().
+ipv6_bin_to_ascii(IPv6Tuple) ->
+    IPv6Ascii = inet_parse:ntoa(IPv6Tuple),
+    IPv6Ascii.
