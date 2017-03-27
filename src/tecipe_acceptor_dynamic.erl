@@ -27,7 +27,6 @@ worker_loop(AcceptorWorker, Handler, Transport, ListeningSock, ListenerRec) ->
     {ok, Sock} = Transport:accept(ListeningSock),
     ok = add_worker(AcceptorWorker),
     unlink(AcceptorWorker),
-
     TecipeSock = tecipe_socket:upgrade(Sock, Transport, ListenerRec),
 
     WorkerPID = self(),
@@ -38,7 +37,7 @@ worker_loop(AcceptorWorker, Handler, Transport, ListeningSock, ListenerRec) ->
 	_ ->
 	    ok
     end,
-
+    
     case Handler of
 	{Module, Function, Args} ->
 	    apply(Module, Function, [Transport, TecipeSock, Args]);
