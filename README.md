@@ -55,10 +55,10 @@ Tecipe Concepts
 ----
 
 * **Listener**: An actor which is listening on a port and waits for new connections by its acceptors.
-* **Acceptor**: An actor which accepts new connections and spawns workers to handler the connection.
-* **Worker**: An actor which owns an accepted socket and do the logic.
+* **Acceptor**: An actor which accepts new connections and spawns workers to handle the connection.
+* **Worker**: An actor which owns an accepted socket and does the logic.
 * **Monitor**: An actor which is attached to a listener and monitors the workers and collects their stats.
-* **Pool**: The number of acceptors which a listeners created.
+* **Pool**: The number of acceptors which a listener created.
 * **Transport**: An interface which must implement some required API to work with sockets.
 * **Handler**: A function or MFA which is responsible to implement the logic of workers.
 
@@ -90,7 +90,7 @@ new connections.
 
 * **Dynamic**:
 
-A listener with dynamic acceptor pool accepts incoming connections inside the acceptors and make it a worker, and then
+A listener with dynamic acceptor pool accepts incoming connections inside the acceptors and makes it a worker, and then
 a new acceptor is spawned. This way the acceptors are changed to workers and new acceptors are replaced with.
 ```
                        +--------------+                           +--------------+
@@ -117,7 +117,7 @@ Monitoring Workers
 -----
 
 When the `monitor` option of a listener is set to `true`, a monitor actor becomes responsible for collecting the statistics and giving the report.
-Using `get_stats/1` you can get the statistics as return value and format it as you want. However there is a `print_stats/1` function which prints
+Using `get_stats/1` you can get the statistics as return value and format it as you want. However, there is a `print_stats/1` function which prints
 all the available statistics as follows.
 
 ```
