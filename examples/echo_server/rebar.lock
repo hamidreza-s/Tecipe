@@ -4,5 +4,5 @@
   1},
  {<<"tecipe">>,
   {git,"https://github.com/bisphone/tecipe.git",
-       {ref,"4a9972e7cbaa891d54a8e85ca9f4d039d30406c4"}},
+       {ref,"36914b74a3c9aab4b539a46f8c533846b04a93ed"}},
   0}].

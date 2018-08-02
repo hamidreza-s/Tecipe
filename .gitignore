@@ -16,9 +16,5 @@ _build
 
 .DS_Store
 
-*~
-\#*\#
-.\#*
-
 tmp
 src/echo_handler.erl
