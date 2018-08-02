@@ -7,14 +7,13 @@
 -include_lib("eunit/include/eunit.hrl").
 
 suite() ->
-    [{timetrap, {seconds, 10}}].
+    [{timetrap, {seconds, 60}}].
 
 init_per_suite(Config) ->
     ok = application:ensure_started(tecipe),
     Config.
 
 end_per_suite(_Config) ->
-    ok = application:stop(tecipe),
     ok.
 
 init_per_group(_GroupName, Config) ->
@@ -36,8 +35,8 @@ all() ->
     [static_acceptor, dynamic_acceptor].
 
 static_acceptor(_Config) ->
-    Ref = listener_test_1,
-    Port = 9991,
+    Ref = foo,
+    Port = 9999,
     Handler = {tecipe_utils, echo_handler, []},
     Acceptor = static,
     Transport = tecipe_tcp,
@@ -67,8 +66,8 @@ static_acceptor(_Config) ->
     ok.
 
 dynamic_acceptor(_Config) ->
-    Ref = listener_test_2,
-    Port = 9992,
+    Ref = bar,
+    Port = 8888,
     Acceptor = dynamic,
     Transport = tecipe_tcp,
     Pool = 10,

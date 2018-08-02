@@ -15,8 +15,7 @@ start_link(Ref, Handler, ListeningSock, ListenerRec) ->
     Transport = ListenerRec#tecipe_listener.transport,
     Name = ListenerRec#tecipe_listener.acceptor_name,
     {ok, AcceptorWorker} = gen_server:start_link({local, Name}, ?MODULE,
-						 [Ref, Handler, Transport,
-						  ListeningSock, ListenerRec], []),
+						 [Ref, Handler, Transport, ListeningSock, ListenerRec], []),
     [ok = add_worker(AcceptorWorker) || _ <- lists:seq(1, Pool)],
     {ok, AcceptorWorker}.
 
@@ -28,22 +27,19 @@ worker_loop(AcceptorWorker, Handler, Transport, ListeningSock, ListenerRec) ->
     ok = add_worker(AcceptorWorker),
     unlink(AcceptorWorker),
 
-    TecipeSock = tecipe_socket:upgrade(Sock, Transport, ListenerRec),
-
     WorkerPID = self(),
     case ListenerRec#tecipe_listener.monitor of
 	true ->
-	    tecipe_monitor:monitor_worker(ListenerRec#tecipe_listener.monitor_name,
-					  TecipeSock, WorkerPID);
+	    tecipe_monitor:monitor_worker(ListenerRec#tecipe_listener.monitor_name, Sock, WorkerPID);
 	_ ->
 	    ok
     end,
 
     case Handler of
 	{Module, Function, Args} ->
-	    apply(Module, Function, [Transport, TecipeSock, Args]);
+	    apply(Module, Function, [Transport, Sock, Args]);
 	Function ->
-	    apply(Function, [Transport, TecipeSock])
+	    apply(Function, [Transport, Sock])
     end.
 
 init([Ref, Handler, Transport, ListeningSock, ListenerRec]) ->
@@ -63,8 +59,7 @@ handle_cast(add_worker, State) ->
     ListeningSock = State#state.listening_sock,
     ListenerRec = State#state.listener_rec,
     proc_lib:spawn_link(fun() ->
-				worker_loop(AcceptorWorker, Handler, Transport,
-					    ListeningSock, ListenerRec)
+				worker_loop(AcceptorWorker, Handler, Transport, ListeningSock, ListenerRec)
 			end),
     {noreply, State};
 
